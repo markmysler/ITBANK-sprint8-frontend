@@ -1,95 +1,80 @@
+'use client'
 import Image from 'next/image'
 import styles from './page.module.css'
+import Header from './components/header'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import HomePage from './components/home.js'
 
 export default function Home() {
+  const [user,setUser] = useState(null)
+  const [cliente,setCliente] = useState(null)
+  const router = useRouter()
+
+  async function removeToken(){
+    const response = await fetch('http://127.0.0.1:8000/api/auth/logout/', {
+          method: 'POST',
+        })
+        console.log(response.status);
+        if (response.status === 200) {
+          localStorage.removeItem('token')
+          router.push('/login')
+        }
+        
+}
+
+  async function getCliente(){
+    const data = await fetch(`http://127.0.0.1:8000/api/clientes/${user['id']}/`, {
+    method: 'GET',
+  }).then(async(data)=>{
+    const clientData = await readStream(data.body)
+  console.log(clientData)
+  setCliente(JSON.parse(clientData))})
+  }
+
+  async function readStream(stream) {
+    const reader = stream.getReader();
+    let result = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      result += new TextDecoder("utf-8").decode(value);
+    }
+    return result;
+   }
+
+   useEffect(()=>{
+    const t = window.localStorage.getItem('token')
+    console.log(t);
+    if (t=== undefined || t === null) {
+     router.push('/login')
+    }else{
+     async function getUser(){
+       const userData = await fetch('http://127.0.0.1:8000/api/user/', {
+         'method': 'GET',
+         'headers': {
+           'Authorization': `Token ${t}`
+         }
+       });
+       const data = await readStream(userData.body);
+       console.log(data);
+       setUser(JSON.parse(data));
+     }
+     getUser()
+    }
+   },[])
+useEffect(()=>{
+  if(user !== null && user['id'] !== undefined){
+    getCliente()
+  }
+},[user,setUser])
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    <>
+    <Header user={user} removeToken={removeToken}/>
+    <HomePage cliente={cliente} />
+    </>
+    
   )
 }

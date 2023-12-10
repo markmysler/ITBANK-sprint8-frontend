@@ -1,0 +1,16 @@
+header{
+    display: flex;
+    width: 100vw;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 0 2vw;
+    box-sizing: border-box;
+}
+.userInfo{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 40vw;
+
+}

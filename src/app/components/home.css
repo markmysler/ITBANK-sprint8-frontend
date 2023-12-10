@@ -1,0 +1,23 @@
+.opciones{
+    width: 90vw;
+    border: 2px solid gray;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 2vw;
+    box-sizing: border-box;
+    gap: 10px;
+    margin-top: 10vh;
+}
+.cuadrado{
+    border: 2px solid gray;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40vw;
+    height: 40vw;
+    background-color: rgba(0, 0, 0, 0.2);
+}
