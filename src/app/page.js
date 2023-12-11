@@ -12,10 +12,9 @@ export default function Home() {
   const router = useRouter()
 
   async function removeToken(){
-    const response = await fetch('http://127.0.0.1:8000/api/auth/logout/', {
+    const response = await fetch('http://localhost:8000/api/auth/logout/', {
           method: 'POST',
         })
-        console.log(response.status);
         if (response.status === 200) {
           localStorage.removeItem('token')
           router.push('/login')
@@ -24,11 +23,10 @@ export default function Home() {
 }
 
   async function getCliente(){
-    const data = await fetch(`http://127.0.0.1:8000/api/clientes/${user['id']}/`, {
+    const data = await fetch(`http://localhost:8000/api/clientes/${user['id']}/`, {
     method: 'GET',
   }).then(async(data)=>{
     const clientData = await readStream(data.body)
-  console.log(clientData)
   setCliente(JSON.parse(clientData))})
   }
 
@@ -47,19 +45,17 @@ export default function Home() {
 
    useEffect(()=>{
     const t = window.localStorage.getItem('token')
-    console.log(t);
     if (t=== undefined || t === null) {
      router.push('/login')
     }else{
      async function getUser(){
-       const userData = await fetch('http://127.0.0.1:8000/api/user/', {
+       const userData = await fetch('http://localhost:8000/api/user/', {
          'method': 'GET',
          'headers': {
            'Authorization': `Token ${t}`
          }
        });
        const data = await readStream(userData.body);
-       console.log(data);
        setUser(JSON.parse(data));
      }
      getUser()

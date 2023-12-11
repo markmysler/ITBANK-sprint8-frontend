@@ -8,6 +8,7 @@ export default function HomePage({cliente}){
     const [sucursales, setSucursales] = useState([])
     const [cuentaDialog, setCuentaDialog] = useState(false)
     const [tarjetaDialog, setTarjetaDialog] = useState(false)
+    const [miInfo, setMiInfo] = useState(false)
     const [cardType, setCardType] = useState('DEBITO');
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -20,7 +21,7 @@ export default function HomePage({cliente}){
          alert('Se requiere una cuenta relacionada para crear una tarjeta de debito');
          return;
         }
-        fetch(`http://127.0.0.1:8000/api/tarjeta/${cliente.customer_id}/`, {
+        fetch(`http://localhost:8000/api/tarjeta/${cliente.customer_id}/`, {
          method: 'POST',
          headers: {
            'Content-Type': 'application/json',
@@ -41,7 +42,7 @@ export default function HomePage({cliente}){
         });
        };
     const createAccount = async (accountType) => {
-        const response = await fetch(`http://127.0.0.1:8000/api/cuenta/${cliente.customer_id}/`, {
+        const response = await fetch(`http://localhost:8000/api/cuenta/${cliente.customer_id}/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -56,13 +57,38 @@ export default function HomePage({cliente}){
         }
        
         const data = await response.json();
-        console.log(data);
         setCuentaDialog(!cuentaDialog)
         return data;
        };
+    const requestLoan = async(e) => {
+        e.preventDefault()
+        const formData = new FormData(e.target);
+        let loanData = {};
+        for (let pair of formData.entries()) {
+         loanData[pair[0]] = pair[1];
+        }
+        if ((parseInt(loanData.loan_total) <= 100000 && cliente.customer_type === 'Classic') || (parseInt(loanData.loan_total) <= 300000 && cliente.customer_type === 'Gold') || (parseInt(loanData.loan_total) <= 500000 && cliente.customer_type === 'Black')) {
+            const response = await fetch(`http://localhost:8000/api/prestamo/${cliente.customer_id}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+              },
+            body: JSON.stringify(loanData),
+            });
+       
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+       
+        const data = await response.json();
+        alert('Prestamo acreditado')
+        window.location.reload()
+        }else{
+            alert("El monto debe estar por debajo del limite para tu tipo de cuenta");
+        }
+    }
     useEffect(()=>{
-        console.log(page);
-        if (page === 'cuentas') {
+        if (page === 'cuentas' || page === 'prestamos') {
             getCuentas()
         }else if (page === 'tarjetas') {
             getCuentas()
@@ -73,30 +99,29 @@ export default function HomePage({cliente}){
     },[page, setPage])
     async function getCuentas(){
         if (cuentas.length === 0) {
-            const response = await fetch(`http://127.0.0.1:8000/api/cuenta/${cliente.customer_id}/`)
+            const response = await fetch(`http://localhost:8000/api/cuenta/${cliente.customer_id}/`)
             const cuentasData = await response.json()
-            console.log(cuentasData);
             setCuentas(cuentasData);
         }
     }
     async function getTarjetas(){
         if (tarjetas.length === 0 ){
-            const response = await fetch(`http://127.0.0.1:8000/api/tarjeta/${cliente.customer_id}/`)
+            const response = await fetch(`http://localhost:8000/api/tarjeta/${cliente.customer_id}/`)
             const tarjetasData = await response.json()
             setTarjetas(tarjetasData);
-            console.log(tarjetasData);
         }
     }
     async function getSucursales(){
         if (sucursales.length === 0) {
-            const response = await fetch(`http://127.0.0.1:8000/api/sucursal/`)
+            const response = await fetch(`http://localhost:8000/api/sucursal/`)
             const sucursalesData = await response.json()
             setSucursales(sucursalesData);
-            console.log(sucursalesData);
         }
     }
     return <main>
-        {page === 'main' && <div className="opciones">
+        {page === 'main' && <>
+        {(cliente && cliente.customer_name !== null && cliente.customer_name !== undefined) ? <>
+        <div className="opciones">
             <button className="cuadrado" onClick={()=>setPage('cuentas')}>
                 Cuentas
             </button>
@@ -109,7 +134,20 @@ export default function HomePage({cliente}){
             <button className="cuadrado" onClick={()=>setPage('sucursales')}>
             Sucursales
             </button>
-        </div>}
+        </div>
+        <button className='volver' onClick={()=>setMiInfo(!miInfo)}>Ver mi Informacion</button>
+        <dialog open={miInfo}>
+            {(cliente && cliente.customer_name !== null && cliente.customer_name !== undefined)&& <>
+            <h3>{cliente.customer_name} {cliente.customer_surname}</h3>
+            <p>DNI: {cliente.customer_dni}</p>
+            <p>Fecha de nacimiento: {cliente.dob}</p>
+            <p>Tipo de cliente: {cliente.customer_type}</p>
+            <button className='volver' onClick={()=>setMiInfo(!miInfo)}>Volver</button>
+            </>}
+        </dialog>
+        </>: <h2>Cargando</h2>}
+        
+        </>}
         {page === 'cuentas' && <div className='opciones'>
             <button className='crear' onClick={()=>setCuentaDialog(!cuentaDialog)}>Crear cuenta</button>
             <dialog open={cuentaDialog}>
@@ -195,5 +233,46 @@ export default function HomePage({cliente}){
                 })}
                 <button className='volver' onClick={()=>setPage('main')}>Volver</button>
                 </div>}
+            {page === 'prestamos' && <>
+            <div id='limites'>
+                <h4>Limites</h4>
+                <div id='limites_list'>
+                    <div className='tipo_cuenta classic'>
+                        <h6>Classic</h6>
+                        <p>$100.000</p>
+                    </div>
+                    <div className='tipo_cuenta gold'>
+                        <h6>Gold</h6>
+                        <p>$300.000</p>
+                    </div>
+                    <div className='tipo_cuenta black'>
+                        <h6>Black</h6>
+                        <p>$500.000</p>
+                    </div>
+                </div>
+                <h5>Eres cliente {cliente.customer_type}</h5>
+            </div>
+            <div className='prestamo_opciones'>
+                <h2>Solicitar prestamo</h2>
+                <form onSubmit={requestLoan}>
+                    <label htmlFor='loan_type'>Tipo de prestamo</label>
+                    <select name='loan_type'>
+                        <option value={'PERSONAL'}>Personal</option>
+                        <option value={'HIPOTECARIO'}>Hipotecario</option>
+                        <option value={'PRENDARIO'}>Prendario</option>
+                    </select>
+                    <label htmlFor='loan_total'>Monto a solicitar</label>
+                    <input type='number' name='loan_total'/>
+                    <label htmlFor='target_account'>Cuenta destino</label>
+                    <select name='target_account'>
+                        {cuentas.map((cu, index)=>{
+                            return <option key={index} value={cu.account_id}>Cuenta nro: {cu.account_id}</option>
+                        })}
+                    </select>
+                    <button type='submit' className='crear'>Enviar solicitud</button>
+                </form>
+                </div>
+                <button className='volver' onClick={()=>setPage('main')}>Volver</button>
+            </>}
     </main>
 }

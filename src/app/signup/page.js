@@ -30,7 +30,6 @@ export default function signup(){
             throw new Error(message);
         }
         const userId = await response.json();
-        console.log(userId.user_id);
 
         const response2 = await fetch('http://localhost:8000/api/auth/create-client/',{
             method: 'POST',
@@ -51,7 +50,6 @@ export default function signup(){
             throw new Error(message);
         }
         const client = await response2.json();
-        console.log(client);
         if (client && client.user && client.customer_name) {
             router.push('/login')
         }
